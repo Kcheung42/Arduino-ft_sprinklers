@@ -4,6 +4,8 @@
 
 #define WIFI_SSID		"42US Guests"
 #define WIFI_PASSWORD	"42Events"
+//#define WIFI_SSID    "Bambi"
+//#define WIFI_PASSWORD "1234567890"
 
 #define FIREBASE_HOST	"sprink-3680f.firebaseio.com"
 #define FIREBASE_AUTH	"aAxhPEhI5yKEcsQJ1AXjufYehiZ7Nm0RwdpCCBIn"
@@ -101,9 +103,9 @@ void setup()
 
 	//Initialize serial and wait for port to open:
 	Serial.begin(9600);
-	while (!Serial) {
-		; // wait for serial port to connect. Needed for native USB port only
-	}
+  while(!Serial){
+    ; // wait for serial connection
+  }
 
 	// check for the presence of the shield:
 	if (WiFi.status() == WL_NO_SHIELD) {
@@ -241,19 +243,17 @@ String getData(String streamEvent)
 	return(dat);
 }
 
-const char *getSchedule(char result[])
+const char *getSchedule(char *result)
 {
 	DEBUGln("result is:");
 	DEBUGln(result);
-	StaticJsonBuffer<20000> jsonBuffer;
+	StaticJsonBuffer<15000> jsonBuffer;
 	JsonArray& root = jsonBuffer.parseArray(result);
 	if(!root.success())
 	{
 		DEBUGln("parsingObject() failed");
 	}
-	const char *program = root[0];
-	/* String path = root["path"]; */
-	/* Serial.println(path); */
+	const char *program = root[0]["programSchedule"];
 	DEBUG("program is:");
 	DEBUGln(program);
 	return (program);
@@ -279,8 +279,8 @@ byte getZone(String path)
 {
 	int first = path.indexOf('/');
 	int second = path.indexOf('/',first+1);
-	if (path.substring(first+1, second)[0] == 'z')
-		whichZone = path.substring(first+2, second).toInt();
+	if (path.indexOf("z") != -1 )
+    whichZone = path.substring(path.indexOf("z") + 1).toInt();
 	return(whichZone);
 }
 
@@ -297,6 +297,7 @@ void loop()
 		{
 			String path = getPath(result);
 			String zone = path.substring(path.indexOf("manualOverride" + 14)); //trim off manualOverride
+      Serial.println(zone);
 			boolean active = getStatus(result); //get zone number from zone name: (i.e z00)
 			whichZone = getZone(zone);
 			if (!active)
@@ -311,7 +312,7 @@ void loop()
 				zoneON(whichZone - 1);
 			}
 			else {
-				DEBUG("Invalid ON");
+				DEBUGln("Invalid ON");
 			}
 		}
 		else if (result.indexOf("programSchedule") != -1)
@@ -344,8 +345,8 @@ void loop()
 	 int str_len = result.length() + 1;
 	 char result_array[str_len];
 	 result.toCharArray(result_array, str_len);
-	 DEBUGln(getSchedule(result_array));
 	 result = "";
+	 getSchedule(result_array);
 	}
 	/* if (!client.connected()){ */
 	/* 	DEBUGln(); */
